@@ -102,7 +102,7 @@ class TrainEnvironment:
         
     def step(self,action):
         state_size = 60
-        skip = random.randrange(state_size/2,state_size-1)
+        skip = random.randrange(1,state_size-1)
         print('skip index : ', skip)
         self.train_index += skip
         if self.train_index >= self.end_index-1 : 
