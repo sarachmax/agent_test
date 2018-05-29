@@ -31,7 +31,7 @@ class TrainEnvironment:
     def __init__(self, data, num_index):
         self.train_data = data
         self.train_index = 0 
-        self.end_index = num_index
+        self.end_index = num_index-1
         self.loss_limit = 0.0005 # force sell 
         self.profit = 0.0 
         self.reward = 0

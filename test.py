@@ -39,7 +39,7 @@ class TestEnvironment:
     def __init__(self, data, num_index):
         self.train_data = data
         self.train_index = 0 
-        self.end_index = num_index
+        self.end_index = num_index-1 
         self.loss_limit = 0.0005 # force sell 
         self.profit = 0.0 
         self.reward = 0
@@ -62,7 +62,7 @@ class TestEnvironment:
             return 0 
     
     def calculate_reward(self, action):
-        price_diff = self.train_data[self.train_index,59:60] - self.train_data[self.train_index,58:59]
+        price_diff = self.train_data[self.train_index+1,59:60] - self.train_data[self.train_index,58:59]
         self.reward = 0
         action = self.get_action(action)
         self.profit += action*price_diff
