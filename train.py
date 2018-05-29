@@ -84,8 +84,6 @@ class TrainEnvironment:
             loss = -self.loss_limit*self.cost_price
         else : 
             loss = -self.loss_limit*self.train_data[self.train_index,59:60]
-            
-        print('loss limit : ', loss)
         if self.train_index + 1 == self.end_index :
             if self.reward > 0 : 
                 if self.reward <= 0.001 :
@@ -94,6 +92,9 @@ class TrainEnvironment:
             return True 
         elif self.reward <= loss : 
             self.reward = -3
+            print('------------------------------------------------------------')
+            print('loss limit: ', loss)
+            print('reward : ', self.reward)
             print('Cut Loss !')
             return True
         else :
