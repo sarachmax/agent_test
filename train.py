@@ -10,7 +10,7 @@ import datetime
 import numpy as np
 import pandas as pd 
 
-EPISODES = 200
+EPISODES = 500
 
 start_index = 45    #2010.01.01 00:00
 end_index = 3161+1  #2012.12.30 20:00
@@ -48,7 +48,6 @@ class TrainEnvironment:
         else : 
             # noaction 
             return 0 
-        
     
     def calculate_reward(self, action):
         price_diff = self.train_data[self.train_index,59:60] - self.train_data[self.train_index,58:59]
@@ -58,11 +57,12 @@ class TrainEnvironment:
         if price_diff*action > 0 :
             reward = price_diff
         elif price_diff*action < 0 : 
-            reward = 3*price_diff
+            reward = 3*price_diff*action
         elif price_diff == 0 and action == 0 : 
-            reward = 0.0001
+            reward = 0.002
+        elif action == 0 :
+            reward = -0.001
         return reward 
-    
     
     def done_check(self):
         loss = -self.loss_limit*self.train_data[self.train_index,59:60]
