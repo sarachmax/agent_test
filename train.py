@@ -11,7 +11,7 @@ import random
 import numpy as np
 import pandas as pd 
 
-EPISODES = 50
+EPISODES = 1
 
 start_index = 45    #2010.01.01 00:00
 end_index = 3161+1  #2012.12.30 20:00
@@ -21,7 +21,8 @@ train_data = dataset.iloc[start_index:end_index,5:6]
 train_data = np.array(train_data)
 state_size = 60
 X_train = [] 
-for i in range(state_size, end_index-start_index):
+all_index = end_index-start_index
+for i in range(state_size, all_index):
     X_train.append(train_data[i-state_size:i,0])
 X_train = np.array(X_train)
 
@@ -95,10 +96,10 @@ class TrainEnvironment:
 #########################################################################################################
 # Train     
 #########################################################################################################         
-def watch_result(s_time, e_time, c_index, all_index, action, reward, profit):
+def watch_result(episode ,s_time, e_time, c_index, all_index, action, reward, profit):
     print('-------------------- Check -------------------------')
     print('start time: ' + s_time)  
-    print('counter : ', c_index,'/', all_index)
+    print('counter : ', c_index,'/', all_index,' of episode : ', episode)
     print('action : ', action)
     print('reward : ', reward)
     print('current profit : ', profit)
@@ -110,7 +111,7 @@ if __name__ == "__main__":
     
     agent = DQNAgent(state_size)
     #agent.load("agent_model.h5")
-    num_index = end_index - start_index
+    num_index = all_index - state_size
     env = TrainEnvironment(X_train, num_index)
     batch_size = 32 
     for e in range(EPISODES):
@@ -127,7 +128,7 @@ if __name__ == "__main__":
             if done:
                 agent.update_target_model()
                 print('----------------------------- Episode Result -----------------------')
-                print("episode: {}/{}, score: {}, e: {:.2}"
+                print("episode: {}/{}, time: {}, e: {:.2}"
                       .format(e, EPISODES, t, agent.epsilon))
                 print('----------------------------- End Episode --------------------------')
                 break
@@ -137,7 +138,7 @@ if __name__ == "__main__":
             
             end_time = str(datetime.datetime.now().time())
             
-            watch_result(start_time, end_time, env.train_index, end_index-start_index, env.get_action(action), reward ,env.profit)     
+            watch_result(e , start_time, end_time, env.train_index, end_index-start_index, env.get_action(action), reward ,env.profit)     
                      
     agent.save("agent_model.h5")
                       
