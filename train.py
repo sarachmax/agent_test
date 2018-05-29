@@ -11,7 +11,7 @@ import random
 import numpy as np
 import pandas as pd 
 
-EPISODES = 500
+EPISODES = 50
 
 start_index = 45    #2010.01.01 00:00
 end_index = 3161+1  #2012.12.30 20:00
@@ -91,7 +91,20 @@ class TrainEnvironment:
         self.calculate_reward(action)
         done = self.done_check()
         return ns, self.reward, done
-        
+
+#########################################################################################################
+# Train     
+#########################################################################################################         
+def watch_result(s_time, e_time, c_index, all_index, action, reward, profit):
+    print('-------------------- Check -------------------------')
+    print('start time: ' + s_time)  
+    print('counter : ', c_index,'/', all_index)
+    print('action : ', action)
+    print('reward : ', reward)
+    print('current profit : ', profit)
+    print('end_time: ' + e_time)
+    print('-------------------End Check -----------------------')
+
     
 if __name__ == "__main__":
     
@@ -123,16 +136,9 @@ if __name__ == "__main__":
                 agent.replay(batch_size)
             
             end_time = str(datetime.datetime.now().time())
-              
-            print('-------------------- Check -------------------------')
-            print('start time: ' + start_time)  
-            print('counter : ', env.train_index,'/', end_index-start_index)
-            print('action : ', env.get_action(action))
-            print('reward : ', reward)
-            print('current profit : ', env.profit)
-            print('end_time: ' + end_time)
-            print('-------------------End Check -----------------------')
             
+            watch_result(start_time, end_time, env.train_index, end_index-start_index, env.get_action(action), reward ,env.profit)     
+                     
     agent.save("agent_model.h5")
                       
     
