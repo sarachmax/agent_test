@@ -7,10 +7,11 @@ Created on Mon May 28 22:11:15 2018
 
 from EURUSDagent import DQNAgent
 import datetime
+import random 
 import numpy as np
 import pandas as pd 
 
-EPISODES = 500
+EPISODES = 100
 
 start_index = 45    #2010.01.01 00:00
 end_index = 3161+1  #2012.12.30 20:00
@@ -30,7 +31,7 @@ class TrainEnvironment:
         self.train_data = data
         self.train_index = 0 
         self.end_index = num_index
-        self.loss_limit = 0.1 
+        self.loss_limit = 0.008 
         self.profit = 0.0 
         
     def reset(self):
@@ -73,7 +74,12 @@ class TrainEnvironment:
             return self.profit <= loss
         
     def step(self,action):
-        self.train_index += 1 
+        state_size = 60
+        skip = random.randrange(1,state_size/2)
+        print('skip index : ', skip)
+        self.train_index += skip
+        if self.train_index >= self.end_index-1 : 
+            self.train_index = self.end_index-1 
         done = self.done_check()
         ns = [X_train[self.train_index]]
         reward = self.calculate_reward(action)
@@ -100,8 +106,10 @@ if __name__ == "__main__":
             state = next_state       
             if done:
                 agent.update_target_model()
+                print('------------------- Episode result -----------------------')
                 print("episode: {}/{}, score: {}, e: {:.2}"
                       .format(e, EPISODES, t, agent.epsilon))
+                print('-------------------End Episode -----------------------')
                 break
             
             if len(agent.memory) > batch_size:
@@ -111,7 +119,7 @@ if __name__ == "__main__":
               
             print('-------------------- Check -------------------------')
             print('start time: ' + start_time)  
-            print('counter : ', t,'/', end_index-start_index)
+            print('counter : ', env.train_index,'/', end_index-start_index)
             print('action : ', env.get_action(action))
             print('reward : ', reward)
             print('current profit : ', env.profit)
