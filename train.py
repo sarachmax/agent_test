@@ -72,6 +72,8 @@ class TrainEnvironment:
         if self.train_index + 1 == self.end_index :
             if self.profit > 0 : 
                 self.reward = self.profit 
+                if self.profit <= 0.00001 :
+                    self.reward = -0.8
             print('Full End !')
             return True 
         elif self.profit <= loss : 
