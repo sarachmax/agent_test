@@ -60,7 +60,7 @@ class TrainEnvironment:
         self.profit += action*price_diff
         
         if price_diff*action > 0 :
-            self.reward = price_diff
+            self.reward = price_diff*action
         elif price_diff*action < 0 : 
             self.reward = 3*price_diff*action
         elif action == 0 :
