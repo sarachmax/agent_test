@@ -97,7 +97,7 @@ class TrainEnvironment:
 def watch_result(episode ,s_time, e_time, c_index, all_index, action, reward, profit):
     print('-------------------- Check -------------------------')
     print('start time: ' + s_time)  
-    print('counter : ', c_index,'/', all_index,' of episode : ', episode)
+    print('counter : ', c_index,'/', all_index,' of episode : ', episode, '/', EPISODES)
     print('action : ', action)
     print('reward : ', reward)
     print('current profit : ', profit)
