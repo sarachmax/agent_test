@@ -32,14 +32,24 @@ class TrainEnvironment:
         self.train_data = data
         self.train_index = 0 
         self.end_index = num_index-1
-        self.loss_limit = 0.0005 # force sell 
-        self.profit = 0.0 
+        self.loss_limit = 0.01 # force sell 
+        
+        self.profit = 0
         self.reward = 0
+        self.mem_reward = 0
+        
+        # portfolio 
+        self.cost_price = 0 
+        self.mem_action = 0
         
     def reset(self):
         self.train_index = 0 
         self.profit = 0
         self.reward = 0 
+        self.cost_price = 0 
+        self.mem_action = 0
+        self.mem_reward = 0
+        
         return [self.train_data[self.train_index]]
     
     def get_action(self,action):
@@ -54,30 +64,36 @@ class TrainEnvironment:
             return 0 
     
     def calculate_reward(self, action):
-        price_diff = self.train_data[self.train_index+1,59:60] - self.train_data[self.train_index,58:59]
-        self.reward = 0
         action = self.get_action(action)
-        self.profit += action*price_diff
-        
-        if price_diff*action > 0 :
-            self.reward = price_diff*action
-        elif price_diff*action < 0 : 
-            self.reward = 3*price_diff*action
-        elif action == 0 :
-            self.reward = -0.01
-    
+        current_price = self.train_data[self.train_index,59:60]
+        if action == self.mem_action :
+            self.profit = action*(current_price - self.cost_price)
+            self.reward = self.mem_reward + self.profit
+        else :  
+            if action == 0 : 
+                self.profit = self.mem_action*(current_price - self.cost_price)    
+            else :
+                self.profit = current_price*(-0.001) + self.mem_action*(current_price - self.cost_price)
+            self.reward += self.profit
+            self.mem_reward = self.reward 
+            self.cost_price = current_price
+            self.mem_action = action
+
     def done_check(self):
-        loss = -self.loss_limit*self.train_data[self.train_index,59:60]
+        if self.cost_price != 0 : 
+            loss = -self.loss_limit*self.cost_price
+        else : 
+            loss = -self.loss_limit*self.train_data[self.train_index,59:60]
+            
         print('loss limit : ', loss)
         if self.train_index + 1 == self.end_index :
-            if self.profit > 0 : 
-                self.reward = self.profit 
-                if self.profit <= 0.01 :
-                    self.reward = -0.8
+            if self.reward > 0 : 
+                if self.reward <= 0.001 :
+                    self.reward = -1
             print('Full End !')
             return True 
-        elif self.profit <= loss : 
-            self.reward = -1
+        elif self.reward <= loss : 
+            self.reward = -3
             print('Cut Loss !')
             return True
         else :
@@ -103,8 +119,8 @@ def watch_result(episode ,s_time, e_time, c_index, all_index, action, reward, pr
     print('start time: ' + s_time)  
     print('counter : ', c_index,'/', all_index,' of episode : ', episode, '/', EPISODES)
     print('action : ', action)
-    print('reward : ', reward)
     print('current profit : ', profit)
+    print('reward (all profit): ', reward)
     print('end_time: ' + e_time)
     print('-------------------End Check -----------------------')
 
