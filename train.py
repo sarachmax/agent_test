@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd 
 
 EPISODES = 300
+MARGIN = 1000
 
 start_index = 45    #2010.01.01 00:00
 end_index = 3161+1  #2012.12.30 20:00
@@ -110,7 +111,7 @@ class TrainEnvironment:
         ns = [self.train_data[self.train_index]]
         self.calculate_reward(action)
         done = self.done_check()
-        return ns, self.reward, done
+        return ns, self.reward*MARGIN, done
 
 #########################################################################################################
 # Train     
@@ -120,7 +121,7 @@ def watch_result(episode ,s_time, e_time, c_index, all_index, action, reward, pr
     print('start time: ' + s_time)  
     print('counter : ', c_index,'/', all_index,' of episode : ', episode, '/', EPISODES)
     print('action : ', action)
-    print('current profit : ', profit)
+    print('current profit : ', profit*MARGIN)
     print('reward (all profit): ', reward)
     print('end_time: ' + e_time)
     print('-------------------End Check -----------------------')
