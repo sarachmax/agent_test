@@ -11,7 +11,7 @@ import random
 import numpy as np
 import pandas as pd 
 
-EPISODES = 1
+EPISODES = 100
 
 start_index = 45    #2010.01.01 00:00
 end_index = 3161+1  #2012.12.30 20:00
