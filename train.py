@@ -91,11 +91,11 @@ class TrainEnvironment:
             print('Full End !')
             return True 
         elif self.reward <= loss : 
-            self.reward = -3
             print('------------------------------------------------------------')
             print('loss limit: ', loss)
             print('reward : ', self.reward)
             print('Cut Loss !')
+            self.reward = -3
             return True
         else :
             return False
