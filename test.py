@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue May 29 17:12:20 2018
+
+@author: sarac
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Mon May 28 22:11:15 2018
 
 @author: sarac
@@ -10,6 +17,7 @@ import datetime
 import random 
 import numpy as np
 import pandas as pd 
+import matplotlib.pyplot as plt 
 
 EPISODES = 100
 
@@ -20,14 +28,14 @@ train_data = dataset.iloc[start_index:end_index,5:6]
 
 train_data = np.array(train_data)
 state_size = 60
-X_train = [] 
+X_test= [] 
 all_index = end_index-start_index
 for i in range(state_size, all_index):
-    X_train.append(train_data[i-state_size:i,0])
-X_train = np.array(X_train)
+    X_test.append(train_data[i-state_size:i,0])
+X_test = np.array(X_test)
 
 
-class TrainEnvironment:
+class TestEnvironment:
     def __init__(self, data, num_index):
         self.train_data = data
         self.train_index = 0 
@@ -54,7 +62,7 @@ class TrainEnvironment:
             return 0 
     
     def calculate_reward(self, action):
-        price_diff = self.train_data[self.train_index+1,59:60] - self.train_data[self.train_index,58:59]
+        price_diff = self.train_data[self.train_index,59:60] - self.train_data[self.train_index,58:59]
         self.reward = 0
         action = self.get_action(action)
         self.profit += action*price_diff
@@ -80,9 +88,7 @@ class TrainEnvironment:
             return False
         
     def step(self,action):
-        state_size = 60
-        skip = random.randrange(state_size/2,state_size-1)
-        print('skip index : ', skip)
+        skip = 1
         self.train_index += skip
         if self.train_index >= self.end_index-1 : 
             self.train_index = self.end_index-1 
@@ -94,50 +100,52 @@ class TrainEnvironment:
 #########################################################################################################
 # Train     
 #########################################################################################################         
-def watch_result(episode ,s_time, e_time, c_index, all_index, action, reward, profit):
-    print('-------------------- Check -------------------------')
-    print('start time: ' + s_time)  
-    print('counter : ', c_index,'/', all_index,' of episode : ', episode)
+def watch_result(c_index, all_index, action, reward, profit):
+    print('-------------------- Check -------------------------')  
+    print('counter : ', c_index,'/', all_index)
     print('action : ', action)
     print('reward : ', reward)
     print('current profit : ', profit)
-    print('end_time: ' + e_time)
     print('-------------------End Check -----------------------')
 
     
 if __name__ == "__main__":
     
     agent = DQNAgent(state_size)
-    #agent.load("agent_model.h5")
+    agent.load("agent_model.h5")
     num_index = all_index - state_size
-    env = TrainEnvironment(X_train, num_index)
-    batch_size = 32 
-    for e in range(EPISODES):
-        state = env.reset()
-        state = np.reshape(state, (1, state_size, 1))
+    env = TestEnvironment(X_test, num_index)
+    
+    state = env.reset()
+    state = np.reshape(state, (1, state_size, 1))
+    profit = []
+    batch_size = 32
+    
+    for t in range(end_index-start_index):
+        start_time = str(datetime.datetime.now().time())
+        action = agent.act(state)
+        next_state, reward, done = env.step(action)
+        next_state = np.reshape(next_state, (1,state_size,1))
+        agent.remember(state, action, reward, next_state, done)
+        state = next_state       
+        if done:
+            agent.update_target_model()
+            print('test_done')
+            break
+        if len(agent.memory) > batch_size:
+            agent.replay(batch_size)
+            
+        watch_result(env.train_index, end_index-start_index, env.get_action(action), reward ,env.profit)
+        profit.append(env.profit)
+    profit = np.array(profit)
+    
+    plt.plot(profit, color = 'blue', label = 'Profit')
+    plt.title('Profit')
+    plt.xlabel('Time')
+    plt.ylabel('Profit')
+    plt.legend()
+    plt.show()
+    
         
-        for t in range(end_index-start_index):
-            start_time = str(datetime.datetime.now().time())
-            action = agent.act(state)
-            next_state, reward, done = env.step(action)
-            next_state = np.reshape(next_state, (1,state_size,1))
-            agent.remember(state, action, reward, next_state, done)
-            state = next_state       
-            if done:
-                agent.update_target_model()
-                print('----------------------------- Episode Result -----------------------')
-                print("episode: {}/{}, time: {}, e: {:.2}"
-                      .format(e, EPISODES, t, agent.epsilon))
-                print('----------------------------- End Episode --------------------------')
-                break
-            
-            if len(agent.memory) > batch_size:
-                agent.replay(batch_size)
-            
-            end_time = str(datetime.datetime.now().time())
-            
-            watch_result(e , start_time, end_time, env.train_index, end_index-start_index, env.get_action(action), reward ,env.profit)     
-                     
-    agent.save("agent_model.h5")
                       
     
