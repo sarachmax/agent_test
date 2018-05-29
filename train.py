@@ -11,7 +11,7 @@ import random
 import numpy as np
 import pandas as pd 
 
-EPISODES = 100
+EPISODES = 500
 
 start_index = 45    #2010.01.01 00:00
 end_index = 3161+1  #2012.12.30 20:00
@@ -31,12 +31,14 @@ class TrainEnvironment:
         self.train_data = data
         self.train_index = 0 
         self.end_index = num_index
-        self.loss_limit = 0.008 
+        self.loss_limit = 0.0005 # force sell 
         self.profit = 0.0 
+        self.reward = 0
         
     def reset(self):
         self.train_index = 0 
         self.profit = 0
+        self.reward = 0 
         return [self.train_data[self.train_index]]
     
     def get_action(self,action):
@@ -52,39 +54,43 @@ class TrainEnvironment:
     
     def calculate_reward(self, action):
         price_diff = self.train_data[self.train_index,59:60] - self.train_data[self.train_index,58:59]
-        self.profit += price_diff
-        reward = 0
+        self.reward = 0
         action = self.get_action(action)
+        self.profit += action*price_diff
+        
         if price_diff*action > 0 :
-            reward = price_diff
+            self.reward = price_diff
         elif price_diff*action < 0 : 
-            reward = 3*price_diff*action
+            self.reward = 3*price_diff*action
         elif price_diff == 0 and action == 0 : 
-            reward = 0.002
+            self.reward = 0.002
         elif action == 0 :
-            reward = -0.001
-        return reward 
+            self.reward = -0.001
     
     def done_check(self):
         loss = -self.loss_limit*self.train_data[self.train_index,59:60]
         print('loss limit : ', loss)
         if self.train_index + 1 == self.end_index :
+            if self.profit > 0 : 
+                self.reward = self.profit 
             return True 
+        elif self.profit <= loss : 
+            self.reward = -1
+            return True
         else :
-            return self.profit <= loss
+            return False
         
     def step(self,action):
         state_size = 60
-        # skip = random.randrange(1,state_size/2)
-        # print('skip index : ', skip)
-        skip = state_size/2
+        skip = random.randrange(state_size/2,state_size-1)
+        print('skip index : ', skip)
         self.train_index += skip
         if self.train_index >= self.end_index-1 : 
             self.train_index = self.end_index-1 
-        done = self.done_check()
         ns = [X_train[self.train_index]]
-        reward = self.calculate_reward(action)
-        return ns, reward, done
+        self.calculate_reward(action)
+        done = self.done_check()
+        return ns, self.reward, done
         
     
 if __name__ == "__main__":
@@ -107,10 +113,10 @@ if __name__ == "__main__":
             state = next_state       
             if done:
                 agent.update_target_model()
-                print('------------------- Episode result -----------------------')
+                print('----------------------------- Episode Result -----------------------')
                 print("episode: {}/{}, score: {}, e: {:.2}"
                       .format(e, EPISODES, t, agent.epsilon))
-                print('-------------------End Episode -----------------------')
+                print('----------------------------- End Episode --------------------------')
                 break
             
             if len(agent.memory) > batch_size:
