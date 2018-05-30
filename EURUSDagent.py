@@ -21,7 +21,7 @@ class DQNAgent:
         self.state_size = state_size
         self.epsilon = 1.0  # exploration rate
         self.gamma = 0.95   # discount rate 
-        self.action_size = 3 
+        self.action_size = 2 
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.99
         
@@ -36,7 +36,7 @@ class DQNAgent:
         model.add(LSTM(30, return_sequences = True, input_shape = (self.state_size,1), activation='relu'))
         model.add(LSTM(18, return_sequences = True,  activation='relu'))
         model.add(LSTM(6, activation='relu'))
-        model.add(Dense(3, activation='linear'))
+        model.add(Dense(2, activation='linear'))
         model.compile(loss='mean_squared_error', optimizer=Adam(lr=self.learning_rate))
         return model
 
