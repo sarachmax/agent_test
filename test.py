@@ -7,7 +7,6 @@ Created on Mon May 28 22:11:15 2018
 
 from EURUSDagent import DQNAgent
 import datetime
-import random 
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt 
@@ -43,7 +42,7 @@ class TrainEnvironment:
         self.train_data = data
         self.train_index = 0 
         self.end_index = num_index-1
-        self.loss_limit = 0.001 # force sell 
+        self.loss_limit = 0.3 # force sell 
         
         self.profit = 0
         self.reward = 0
@@ -112,9 +111,7 @@ class TrainEnvironment:
             return False
         
     def step(self,action):
-        state_size = 60
-        skip = random.randrange(1,state_size-1)
-        print('skip index : ', skip)
+        skip = 1
         self.train_index += skip
         if self.train_index >= self.end_index-1 : 
             self.train_index = self.end_index-1 
@@ -152,7 +149,7 @@ if __name__ == "__main__":
         test_profit = [] 
         for t in range(end_index-start_index):
             start_time = str(datetime.datetime.now().time())
-            action = agent.act(state)
+            action = agent.act(state, False)    # test 
             next_state, reward, done = env.step(action)
             next_state = np.reshape(next_state, (1,state_size,1))
             agent.remember(state, action, reward, next_state, done)
@@ -164,16 +161,16 @@ if __name__ == "__main__":
                       .format(e, EPISODES, t, agent.epsilon))
                 print('----------------------------- End Episode --------------------------')
                 break
-            
+            """
             if len(agent.memory) > batch_size:
                 agent.replay(batch_size)
-            
+            """
             end_time = str(datetime.datetime.now().time())
             
             watch_result(e , start_time, end_time, env.train_index, end_index-start_index, env.get_action(action), reward ,env.profit)  
             
-            test_profit.append(env.reward[0])
-            test_profit = np.array(test_profit)
+            test_profit.append(env.reward*1000)
+    test_profit = np.array(test_profit)
     
     # agent.save("agent_model.h5")
     plt.plot(test_profit, color = 'blue', label = 'Profit')

@@ -47,9 +47,10 @@ class DQNAgent:
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
    
-    def act(self, state):
-        if np.random.rand() <= self.epsilon:
-            return random.randrange(self.action_size)
+    def act(self, state, train = True):
+        if train : 
+            if np.random.rand() <= self.epsilon:
+                return random.randrange(self.action_size)
         act_values = self.model.predict(state)
         return np.argmax(act_values[0]) #return action 
     
