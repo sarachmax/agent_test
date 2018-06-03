@@ -1,30 +1,30 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon May 28 22:11:15 2018
-
 @author: sarac
 """
 
 from EURUSDagent import DQNAgent
 import datetime
-import random 
 import numpy as np
 import pandas as pd 
+#import random
 
-EPISODES = 300
+EPISODES = 250
 MARGIN = 1000
 
-start_index = 45    #2010.01.01 00:00
-end_index = 3161+1  #2012.12.30 20:00
+start_index = 4664    #2013.01.02 12:00
+end_index = 8322+1  #2016.06.01 00:00
 dataset = pd.read_csv('EURUSD_4H.csv')
 train_data = dataset.iloc[start_index:end_index,5:6]
 
 train_data = np.array(train_data)
-state_size = 60
+state_size = 60 + 1 
+num_data = 60
 X_train = [] 
 all_index = end_index-start_index
-for i in range(state_size, all_index):
-    X_train.append(train_data[i-state_size:i,0])
+for i in range(num_data, all_index):
+    X_train.append(train_data[i-num_data:i,0])
 X_train = np.array(X_train)
 
 
@@ -33,7 +33,7 @@ class TrainEnvironment:
         self.train_data = data
         self.train_index = 0 
         self.end_index = num_index-1
-        self.loss_limit = 0.1 # force sell 
+        self.loss_limit = 0.3 # force sell 
         
         self.profit = 0
         self.reward = 0
@@ -50,8 +50,9 @@ class TrainEnvironment:
         self.cost_price = 0 
         self.mem_action = 0
         self.mem_reward = 0
-        
-        return [self.train_data[self.train_index]]
+        init_state = self.train_data[self.train_index]
+        init_state = np.insert(init_state, 0,self.profit)
+        return [init_state]
     
     def get_action(self,action):
         if action == 0 :
@@ -70,14 +71,16 @@ class TrainEnvironment:
         if action == self.mem_action :
             self.profit = action*(current_price - self.cost_price)
             self.reward = self.mem_reward + self.profit
+            print('new/mem action : ', action, ' / ', self.mem_action)
         else :  
             if action == 0 : 
                 self.profit = self.mem_action*(current_price - self.cost_price)    
             else :
                 self.profit = current_price*(-0.001) + self.mem_action*(current_price - self.cost_price)
-            self.reward += self.profit
+            self.reward = self.profit + self.mem_reward
             self.mem_reward = self.reward 
             self.cost_price = current_price
+            print('new/mem action : ', action, ' / ', self.mem_action)
             self.mem_action = action
 
     def done_check(self):
@@ -87,7 +90,7 @@ class TrainEnvironment:
             loss = -self.loss_limit*self.train_data[self.train_index,59:60]
         if self.train_index + 1 == self.end_index :
             if self.reward > 0 : 
-                if self.reward <= 0.001 :
+                if self.reward <= 0.05*self.train_data[self.train_index,59:60]:
                     self.reward = -1
             print('Full End !')
             return True 
@@ -102,13 +105,12 @@ class TrainEnvironment:
             return False
         
     def step(self,action):
-        state_size = 60
-        skip = random.randrange(1,state_size-1)
-        print('skip index : ', skip)
+        skip = 6  # half day 
         self.train_index += skip
         if self.train_index >= self.end_index-1 : 
             self.train_index = self.end_index-1 
-        ns = [self.train_data[self.train_index]]
+        ns = self.train_data[self.train_index]
+        ns = [np.insert(ns, 0, self.profit)]
         self.calculate_reward(action)
         done = self.done_check()
         return ns, self.reward*MARGIN, done
@@ -116,11 +118,11 @@ class TrainEnvironment:
 #########################################################################################################
 # Train     
 #########################################################################################################         
-def watch_result(episode ,s_time, e_time, c_index, all_index, action, reward, profit):
+def watch_result(episode ,s_time, e_time, c_index, all_index, last_action,reward, profit):
     print('-------------------- Check -------------------------')
     print('start time: ' + s_time)  
     print('counter : ', c_index,'/', all_index,' of episode : ', episode, '/', EPISODES)
-    print('action : ', action)
+    #print('action new: ', action)
     print('current profit : ', profit*MARGIN)
     print('reward (all profit): ', reward)
     print('end_time: ' + e_time)
@@ -130,36 +132,46 @@ def watch_result(episode ,s_time, e_time, c_index, all_index, action, reward, pr
 if __name__ == "__main__":
     
     agent = DQNAgent(state_size)
-    #agent.load("agent_model.h5")
+    agent.load("agent_model.h5")
+    
     num_index = all_index - state_size
     env = TrainEnvironment(X_train, num_index)
-    batch_size = 32 
+    
+    batch_size = 20 # Train Every 4 weeks data 
+    best_reward = -300
+     
+    
     for e in range(EPISODES):
-        state = env.reset()
-        state = np.reshape(state, (1, state_size, 1))
         
+        state = env.reset()
+        state = np.reshape(state, (1, state_size, 1))  
         for t in range(end_index-start_index):
             start_time = str(datetime.datetime.now().time())
             action = agent.act(state)
+             
             next_state, reward, done = env.step(action)
+            
             next_state = np.reshape(next_state, (1,state_size,1))
             agent.remember(state, action, reward, next_state, done)
-            state = next_state       
+            state = next_state 
             if done:
                 agent.update_target_model()
                 print('----------------------------- Episode Result -----------------------')
-                print("episode: {}/{}, time: {}, e: {:.2}"
-                      .format(e, EPISODES, t, agent.epsilon))
+                print("episode: {}/{}, time: {}, e: {:.4}"
+                      .format(e+1, EPISODES, t, agent.epsilon))
                 print('----------------------------- End Episode --------------------------')
+                if reward >= best_reward :
+                    best_reward = reward
                 break
-            
             if len(agent.memory) > batch_size:
                 agent.replay(batch_size)
             
             end_time = str(datetime.datetime.now().time())
-            
-            watch_result(e , start_time, end_time, env.train_index, end_index-start_index, env.get_action(action), reward ,env.profit)     
-                     
-    agent.save("agent_model.h5")
-                      
-    
+            watch_result(e+1 , start_time, end_time, env.train_index, end_index-start_index, env.get_action(action), reward , env.profit) 
+        agent.save("agent_model.h5")
+        
+    #agent.save("agent_model.h5")
+
+    print('train done')
+    print('BEST RESULT ==================================')
+    print("best reward : ", best_reward)

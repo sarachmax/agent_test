@@ -21,7 +21,7 @@ class DQNAgent:
         self.state_size = state_size
         self.epsilon = 1.0  # exploration rate
         self.gamma = 0.95   # discount rate 
-        self.action_size = 2 
+        self.action_size = 3 
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.99
         
@@ -36,7 +36,7 @@ class DQNAgent:
         model.add(LSTM(30, return_sequences = True, input_shape = (self.state_size,1), activation='relu'))
         model.add(LSTM(18, return_sequences = True,  activation='relu'))
         model.add(LSTM(6, activation='relu'))
-        model.add(Dense(2, activation='linear'))
+        model.add(Dense(self.action_size, activation='relu'))
         model.compile(loss='mean_squared_error', optimizer=Adam(lr=self.learning_rate))
         return model
 
@@ -47,13 +47,15 @@ class DQNAgent:
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
    
-    def act(self, state, train = True):
+    def act(self, state, train = True, random_action = False):
         if train : 
-            if np.random.rand() <= self.epsilon:
+            if np.random.rand() <= self.epsilon or random_action :
+                print('random action')
                 return random.randrange(self.action_size)
         act_values = self.model.predict(state)
+        print('act : ', act_values)
         return np.argmax(act_values[0]) #return action 
-    
+        
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
         
