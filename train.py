@@ -167,7 +167,7 @@ if __name__ == "__main__":
                 agent.replay(batch_size)
             
             end_time = str(datetime.datetime.now().time())
-            watch_result(e+1 , start_time, end_time, env.train_index, end_index-start_index, env.get_action(action), reward , env.profit) 
+            watch_result(e+1 , start_time, end_time, env.train_index, end_index-start_index, env.get_action(action), reward, env.profit) 
         agent.save("agent_model.h5")
         
     #agent.save("agent_model.h5")
