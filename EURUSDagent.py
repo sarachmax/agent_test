@@ -56,6 +56,7 @@ class DQNAgent:
         print('act : ', act_values)
         return np.argmax(act_values[0]) #return action 
         
+    
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
         

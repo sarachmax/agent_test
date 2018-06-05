@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd 
 #import random
 
-EPISODES = 250
+EPISODES = 300
 MARGIN = 1000
 
 start_index = 4664    #2013.01.02 12:00
@@ -34,10 +34,12 @@ class TrainEnvironment:
         self.train_index = 0 
         self.end_index = num_index-1
         self.loss_limit = 0.3 # force sell 
-        
+        self.profit_limit = 0.05 
+
         self.profit = 0
         self.reward = 0
         self.mem_reward = 0
+        
         
         # portfolio 
         self.cost_price = 0 
@@ -55,10 +57,10 @@ class TrainEnvironment:
         return [init_state]
     
     def get_action(self,action):
-        if action == 0 :
+        if action == 1 :
             # buy 
             return 1
-        elif action == 1 : 
+        elif action == 2 : 
             # sell 
             return -1
         else : 
@@ -111,6 +113,8 @@ class TrainEnvironment:
             self.train_index = self.end_index-1 
         ns = self.train_data[self.train_index]
         ns = [np.insert(ns, 0, self.profit)]
+        if self.profit >= self.profit_limit * self.cost_price and self.profit > 0 :
+            self.calculate_reward(0) 
         self.calculate_reward(action)
         done = self.done_check()
         return ns, self.reward*MARGIN, done
