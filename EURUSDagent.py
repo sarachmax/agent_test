@@ -12,6 +12,7 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 from keras import backend as K
 from keras.layers import LSTM
+from keras.layers import Dropout 
 
 
 class DQNAgent:
@@ -33,10 +34,18 @@ class DQNAgent:
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
+
         model.add(LSTM(30, return_sequences = True, input_shape = (self.state_size,1), activation='relu'))
+        model.add(Dropout(0.2)) 
+
         model.add(LSTM(18, return_sequences = True,  activation='relu'))
+        model.add(Dropout(0.2)) 
+
         model.add(LSTM(6, activation='relu'))
-        model.add(Dense(self.action_size, activation='relu'))
+        model.add(Dropout(0.2)) 
+
+        model.add(Dense(self.action_size, activation='tanh'))
+
         model.compile(loss='mean_squared_error', optimizer=Adam(lr=self.learning_rate))
         return model
 
