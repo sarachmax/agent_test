@@ -34,7 +34,7 @@ class TrainEnvironment:
         self.train_index = 0 
         self.end_index = num_index-1
         self.loss_limit = 0.3 # force sell 
-        self.profit_limit = 0.05 
+        self.profit_limit = 0.1 
 
         self.profit = 0
         self.reward = 0
@@ -113,7 +113,7 @@ class TrainEnvironment:
             self.train_index = self.end_index-1 
         ns = self.train_data[self.train_index]
         ns = [np.insert(ns, 0, self.profit)]
-        if self.profit >= self.profit_limit * self.cost_price and self.profit > 0 :
+        if (self.profit >= self.profit_limit*self.cost_price and self.profit > 0 ) or (self.profit <= -(self.profit_limit*self.cost_price) ):
             self.calculate_reward(0) 
         self.calculate_reward(action)
         done = self.done_check()
