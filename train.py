@@ -34,7 +34,7 @@ class TrainEnvironment:
         self.train_index = 0 
         self.end_index = num_index-1
         self.loss_limit = 0.3 # force sell 
-        self.profit_limit = 0.1 
+        self.profit_limit = 0.05
 
         self.profit = 0
         self.reward = 0
