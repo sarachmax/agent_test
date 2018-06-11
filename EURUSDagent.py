@@ -44,7 +44,7 @@ class DQNAgent:
         model.add(LSTM(6, activation='relu'))
         model.add(Dropout(0.2)) 
 
-        model.add(Dense(self.action_size, activation='tanh'))
+        model.add(Dense(self.action_size, activation='linear'))
 
         model.compile(loss='mean_squared_error', optimizer=Adam(lr=self.learning_rate))
         return model
